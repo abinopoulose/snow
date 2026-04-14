@@ -22,9 +22,13 @@ const processPosition = (payload) => {
     console.log(`[Buffer] Queued Position ${data.model_ticker}/${data.security_ticker} (Queue size: ${buffer.length})`);
 };
 
+let isFlushing = false;
+
 const flush = () => {
-    if (buffer.length === 0) return;
+    // Prevent overlapping queries on a single Snowflake connection
+    if (buffer.length === 0 || isFlushing) return;
     
+    isFlushing = true;
     const batch = [...buffer];
     buffer = []; // Clear buffer immediately to avoid race conditions
 
@@ -36,6 +40,7 @@ const flush = () => {
         sqlText: sql,
         binds: batch,
         complete: (err, stmt, rows) => { 
+            isFlushing = false; // Release lock when query finishes
             if (err) {
                 console.error(`[Error] Snowflake Sync Failed for Positions:`, err.message);
             } else {

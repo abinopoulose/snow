@@ -3,7 +3,7 @@
 # Load environment variables
 export $(grep -v '^#' .env | xargs)
 
-echo "[*] Registering Connector for ${DB_HOST}..."
+echo "[*] Registering Connector for ${REPLICA_DB_HOST}..."
 
 # Drop the old names
 curl -s -X DELETE http://localhost:8083/connectors/connector > /dev/null
@@ -14,10 +14,10 @@ curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" 
   "name": "connector",
   "config": {
     "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
-    "database.hostname": "'"${DB_HOST}"'",
+    "database.hostname": "'"${REPLICA_DB_HOST}"'",
     "database.port": "'"${DB_PORT}"'",
-    "database.user": "'"${DB_USER}"'",
-    "database.password": "'"${DB_PASS}"'",
+    "database.user": "'"${CDC_USER}"'",
+    "database.password": "'"${CDC_PASSWORD}"'",
     "database.names": "'"${DB_NAME}"'",
     "topic.prefix": "'"${KAFKA_TOPIC_PREFIX}"'",
     "table.include.list": "dbo.model_positions",

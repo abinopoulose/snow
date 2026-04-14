@@ -26,7 +26,7 @@ const run = async () => {
         console.log('[Success] Kafka connection success.');
 
         await consumer.subscribe({ 
-            topics: [/snow.*models/, /snow.*model_positions/], 
+            topics: ['snow.snow.dbo.model_positions'], 
             fromBeginning: true 
         });
         

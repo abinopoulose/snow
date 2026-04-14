@@ -1,0 +1,7 @@
+services:
+  consumer:
+    build: .
+    container_name: snow-consumer
+    restart: unless-stopped
+    env_file: .env
+    network_mode: host
