@@ -14,8 +14,8 @@ services:
       MSSQL_AGENT_ENABLED: "true"
     ports:
       - "1434:1433"
-    volumes:
-      - mssql-replica-data:/var/opt/mssql
+    tmpfs:
+      - /var/opt/mssql
     stop_grace_period: 30s
     ulimits:
       nofile:
@@ -34,5 +34,3 @@ services:
       interval: 5s
       retries: 10
 
-volumes:
-  mssql-replica-data:

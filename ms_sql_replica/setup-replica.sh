@@ -10,6 +10,12 @@ IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '${DB_NAME}')
     CREATE DATABASE [${DB_NAME}];
 GO
 
+USE master;
+GO
+EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', 2560; RECONFIGURE;
+GO
+
 -- 2. Pre-create table structure because CDC requires it to run 'sp_cdc_enable_table'
 USE [${DB_NAME}];
 GO
@@ -67,6 +73,9 @@ ALTER ROLE db_datareader ADD MEMBER [${CDC_USER}];
 GO
 
 PRINT 'Replica Setup and CDC enabled.';
+WAITFOR DELAY '00:00:02';
+GO
+QUIT
 EOF
 
 echo "Replica process complete."

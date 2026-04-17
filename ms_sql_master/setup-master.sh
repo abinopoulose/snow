@@ -14,18 +14,28 @@ IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '${DB_NAME}')
 GO
 
 -- 2. APPLY FINTECH HIGH-TPS PATCHES
+USE [master];
+GO
+-- Pre-configure TempDB to resolve allocation contention 
+ALTER DATABASE tempdb MODIFY FILE (NAME = tempdev, SIZE = 512MB, FILEGROWTH = 128MB);
+ALTER DATABASE tempdb MODIFY FILE (NAME = templog, SIZE = 512MB, FILEGROWTH = 128MB);
+
 USE [${DB_NAME}];
 GO
-ALTER DATABASE [${DB_NAME}] SET ACCELERATED_DATABASE_RECOVERY = ON WITH ROLLBACK IMMEDIATE;
-ALTER DATABASE [${DB_NAME}] SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE;
+ALTER DATABASE [${DB_NAME}] SET ACCELERATED_DATABASE_RECOVERY = OFF WITH ROLLBACK IMMEDIATE;
+ALTER DATABASE [${DB_NAME}] SET READ_COMMITTED_SNAPSHOT OFF WITH ROLLBACK IMMEDIATE;
+
+-- Fintech TPS Booster (Replication blocks Delayed Durability, so we explicitly disable it to rescue any preserved broken volumes)
+ALTER DATABASE [${DB_NAME}] SET DELAYED_DURABILITY = DISABLED;
 
 -- Pre-allocate log file
-ALTER DATABASE [${DB_NAME}] MODIFY FILE ( NAME = '${DB_NAME}_log', SIZE = 1024MB, FILEGROWTH = 512MB );
+ALTER DATABASE [${DB_NAME}] MODIFY FILE ( NAME = '${DB_NAME}_log', SIZE = 256MB, FILEGROWTH = 128MB );
 GO
 
 -- 3. Performance Configurations
 EXEC sp_configure 'show advanced options', 1; RECONFIGURE;
-EXEC sp_configure 'max server memory (MB)', 6144; RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)', 2560; RECONFIGURE;
+
 EXEC sp_configure 'optimize for ad hoc workloads', 1; RECONFIGURE;
 GO
 
@@ -39,7 +49,8 @@ BEGIN
         security_ticker VARCHAR(50) NOT NULL,
         allocation_percentage DECIMAL(5,2),
         drift_percentage DECIMAL(5,2),
-        CONSTRAINT PK_ModelPos PRIMARY KEY (model_ticker, security_ticker)
+        -- 80% Fillfactor ensures random string inserts do not trigger expensive page splits
+        CONSTRAINT PK_ModelPos PRIMARY KEY CLUSTERED (model_ticker, security_ticker) WITH (FILLFACTOR = 80)
     );
     ALTER TABLE dbo.model_positions SET (LOCK_ESCALATION = DISABLE);
 END
@@ -106,6 +117,9 @@ ALTER ROLE db_datareader ADD MEMBER [${DB_APP_USER}];
 GO
 
 PRINT 'Master Node Setup Complete.';
+WAITFOR DELAY '00:00:02';
+GO
+QUIT
 EOF
 
 echo "Master process complete."
