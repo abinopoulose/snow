@@ -24,11 +24,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 8G
-        reservations:
           cpus: '2'
           memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/1433"]
       interval: 5s

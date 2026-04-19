@@ -1,4 +1,4 @@
-const connection = require('../lib/snowflake');
+const { getConnection } = require('../lib/snowflake');
 
 let buffer = [];
 
@@ -28,6 +28,12 @@ const flush = () => {
     // Prevent overlapping queries on a single Snowflake connection
     if (buffer.length === 0 || isFlushing) return;
     
+    const conn = getConnection();
+    if (!conn) {
+        console.warn('[Warn] Snowflake connection not ready yet. Will retry on next flush.');
+        return;
+    }
+
     isFlushing = true;
     const batch = [...buffer];
     buffer = []; // Clear buffer immediately to avoid race conditions
@@ -36,7 +42,7 @@ const flush = () => {
 
     const sql = `INSERT INTO MODEL_POSITIONS_HISTORY (model_ticker, security_ticker, allocation_percentage, drift_percentage, cdc_operation) VALUES (?, ?, ?, ?, ?)`;
     
-    connection.execute({
+    conn.execute({
         sqlText: sql,
         binds: batch,
         complete: (err, stmt, rows) => { 
