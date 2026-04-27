@@ -6,11 +6,11 @@ export $(grep -v '^#' .env | xargs)
 echo "[*] Registering Connector for ${REPLICA_DB_HOST}..."
 
 # Drop the old names
-curl -s -X DELETE http://localhost:8083/connectors/connector > /dev/null
+curl -s -X DELETE ${KAFKA_CONNECT_URL}/connector > /dev/null
 
 # Register with retry logic for SQL Server
 curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" \
-     http://localhost:8083/connectors/ -d '{
+     ${KAFKA_CONNECT_URL}/ -d '{
   "name": "connector",
   "config": {
     "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
@@ -20,15 +20,16 @@ curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" 
     "database.password": "'"${CDC_PASSWORD}"'",
     "database.names": "'"${DB_NAME}"'",
     "topic.prefix": "'"${KAFKA_TOPIC_PREFIX}"'",
-    "table.include.list": "dbo.model_positions",
+    "table.include.list": "'"${CDC_TABLE_LIST}"'",
     "database.encrypt": "false",
     "decimal.handling.mode": "double",
-    "schema.history.internal.kafka.bootstrap.servers": "kafka:29092",
+    "schema.history.internal.kafka.bootstrap.servers": "'"${KAFKA_BOOTSTRAP_SERVERS}"'",
     "schema.history.internal.kafka.topic": "schemahistory.snow",
-    "snapshot.mode": "initial",
+    "schema.history.internal.kafka.replication.factor": "3",
+    "snapshot.mode": "'"${SNAPSHOT_MODE}"'",
     "errors.retry.delay.max.ms": "60000",
     "errors.tolerance": "all"
   }
 }'
 
-echo -e "\n\n[*] Check status: curl localhost:8083/connectors/connector/status"
+echo -e "\n\n[*] Check status: curl ${KAFKA_CONNECT_URL}/connector/status"

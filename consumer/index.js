@@ -4,7 +4,7 @@ require('dotenv').config();
 const positionsHandler = require('./handlers/positions');
 
 const kafka = new Kafka({ 
-    brokers: [process.env.KAFKA_BOOTSTRAP_SERVERS || 'localhost:9092'],
+    brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS || 'localhost:9092,localhost:9093,localhost:9094').split(','),
     clientId: 'fintech-sync-engine',
     logLevel: logLevel.ERROR,
     // Add retry logic for the broker connection itself

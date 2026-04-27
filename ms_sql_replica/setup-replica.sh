@@ -1,7 +1,7 @@
 #!/bin/bash
 export $(grep -v '^#' .env | xargs)
 
-echo "Setting up Replica Node and CDC for ${DB_NAME} from ${MASTER_DB_HOST}..."
+echo "Setting up Replica Node and CDC for ${DB_NAME}..."
 
 sudo docker run --rm -i --network host mcr.microsoft.com/mssql-tools /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1434 -U sa -P "${MSSQL_SA_PASSWORD}" <<EOF
 
